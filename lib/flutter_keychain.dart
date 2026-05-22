@@ -5,6 +5,31 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 
+/// iOS Keychain accessibility (`kSecAttrAccessible`) for stored items.
+///
+/// Has no effect on Android.
+enum FlutterKeychainAccessible {
+  /// `kSecAttrAccessibleWhenUnlocked`
+  whenUnlocked('whenUnlocked'),
+
+  /// `kSecAttrAccessibleAfterFirstUnlock`
+  afterFirstUnlock('afterFirstUnlock'),
+
+  /// `kSecAttrAccessibleWhenPasscodeSetThisDeviceOnly`
+  whenPasscodeSetThisDeviceOnly('whenPasscodeSetThisDeviceOnly'),
+
+  /// `kSecAttrAccessibleWhenUnlockedThisDeviceOnly`
+  whenUnlockedThisDeviceOnly('whenUnlockedThisDeviceOnly'),
+
+  /// `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`
+  afterFirstUnlockThisDeviceOnly('afterFirstUnlockThisDeviceOnly');
+
+  const FlutterKeychainAccessible(this.value);
+
+  /// Stable string sent over the method channel to iOS.
+  final String value;
+}
+
 /// Provides static helpers for storing and retrieving secure key-value pairs.
 class FlutterKeychain {
   static const MethodChannel _channel =
@@ -26,15 +51,20 @@ class FlutterKeychain {
   /// [label] sets `kSecAttrLabel`, which controls how the item appears in the
   /// iOS Passwords app.
   ///
+  /// [accessible] sets `kSecAttrAccessible`, controlling when Keychain items
+  /// can be read (for example only while the device is unlocked).
+  ///
   /// Call this before the first [get], [put], [remove], or [clear] when
   /// non-default values are required.
   static Future<void> configure({
     String? accessGroup,
     String? label,
+    FlutterKeychainAccessible? accessible,
   }) async =>
       _channel.invokeMethod('configure', {
         'accessGroup': accessGroup,
         'label': label,
+        'accessible': accessible?.value,
       });
 
   /// Stores [value] for [key].

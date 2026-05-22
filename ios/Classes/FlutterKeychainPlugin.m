@@ -31,17 +31,37 @@ static NSString *const CHANNEL_NAME     = @"plugin.appmire.be/flutter_keychain";
 // ---------------------------------------------------------------------------
 
 @interface FlutterKeychainPlugin ()
-/// Base query dictionary rebuilt by -configureWithAccessGroup:label:.
+/// Base query dictionary rebuilt by -configureWithAccessGroup:label:accessible:.
 @property (nonatomic, copy) NSDictionary *baseQuery;
 @end
+
+// Maps Dart [FlutterKeychainAccessible] values to kSecAttrAccessible constants.
+static CFStringRef AccessibleConstantForString(NSString *accessible) {
+    if ([@"whenUnlocked" isEqualToString:accessible]) {
+        return kSecAttrAccessibleWhenUnlocked;
+    }
+    if ([@"afterFirstUnlock" isEqualToString:accessible]) {
+        return kSecAttrAccessibleAfterFirstUnlock;
+    }
+    if ([@"whenPasscodeSetThisDeviceOnly" isEqualToString:accessible]) {
+        return kSecAttrAccessibleWhenPasscodeSetThisDeviceOnly;
+    }
+    if ([@"whenUnlockedThisDeviceOnly" isEqualToString:accessible]) {
+        return kSecAttrAccessibleWhenUnlockedThisDeviceOnly;
+    }
+    if ([@"afterFirstUnlockThisDeviceOnly" isEqualToString:accessible]) {
+        return kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly;
+    }
+    return NULL;
+}
 
 @implementation FlutterKeychainPlugin
 
 - (instancetype)init {
     self = [super init];
     if (self) {
-        // Default: app-specific access group, no label.
-        [self configureWithAccessGroup:nil label:nil];
+        // Default: app-specific access group, no label, system accessible default.
+        [self configureWithAccessGroup:nil label:nil accessible:nil];
     }
     return self;
 }
@@ -59,7 +79,8 @@ static NSString *const CHANNEL_NAME     = @"plugin.appmire.be/flutter_keychain";
 // ---------------------------------------------------------------------------
 
 - (void)configureWithAccessGroup:(nullable NSString *)accessGroup
-                           label:(nullable NSString *)label {
+                           label:(nullable NSString *)label
+                      accessible:(nullable NSString *)accessible {
     NSMutableDictionary *q = [NSMutableDictionary dictionary];
     q[(__bridge id)kSecClass]       = (__bridge id)kSecClassGenericPassword;
     q[(__bridge id)kSecAttrService] = KEYCHAIN_SERVICE;
@@ -68,6 +89,12 @@ static NSString *const CHANNEL_NAME     = @"plugin.appmire.be/flutter_keychain";
     }
     if (label.length > 0) {
         q[(__bridge id)kSecAttrLabel] = label;
+    }
+    if (accessible.length > 0) {
+        CFStringRef accessibleConstant = AccessibleConstantForString(accessible);
+        if (accessibleConstant != NULL) {
+            q[(__bridge id)kSecAttrAccessible] = (__bridge id)accessibleConstant;
+        }
     }
     self.baseQuery = [q copy];
 }
@@ -84,7 +111,18 @@ static NSString *const CHANNEL_NAME     = @"plugin.appmire.be/flutter_keychain";
             ? args[@"accessGroup"] : nil;
         NSString *label = [args[@"label"] isKindOfClass:[NSString class]]
             ? args[@"label"] : nil;
-        [self configureWithAccessGroup:accessGroup label:label];
+        NSString *accessible = [args[@"accessible"] isKindOfClass:[NSString class]]
+            ? args[@"accessible"] : nil;
+        if (accessible.length > 0 &&
+            AccessibleConstantForString(accessible) == NULL) {
+            result([FlutterError errorWithCode:@"INVALID_ACCESSIBLE"
+                                       message:@"Unknown accessible value"
+                                       details:accessible]);
+            return;
+        }
+        [self configureWithAccessGroup:accessGroup
+                                 label:label
+                            accessible:accessible];
         result(nil);
     } else if ([@"get" isEqualToString:call.method]) {
         result([self get:call.key]);

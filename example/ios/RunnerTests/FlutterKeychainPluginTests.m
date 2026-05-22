@@ -328,6 +328,27 @@
     [self invokeMethod:@"configure" arguments:@{}];
 }
 
+- (void)testConfigure_withAccessible_itemsStillRetrievable {
+    [self invokeMethod:@"configure"
+             arguments:@{@"accessible": @"afterFirstUnlock"}];
+    [self invokeMethod:@"put" arguments:@{@"key": @"ak", @"value": @"av"}];
+    XCTAssertEqualObjects([self invokeMethod:@"get" arguments:@{@"key": @"ak"}], @"av");
+    [self invokeMethod:@"configure" arguments:@{}];
+}
+
+- (void)testConfigure_withUnknownAccessible_returnsFlutterError {
+    __block id returnValue = nil;
+    FlutterMethodCall *call =
+        [FlutterMethodCall methodCallWithMethodName:@"configure"
+                                           arguments:@{@"accessible": @"invalid"}];
+    [self.plugin handleMethodCall:call result:^(id result) {
+        returnValue = result;
+    }];
+    XCTAssertTrue([returnValue isKindOfClass:[FlutterError class]]);
+    FlutterError *error = (FlutterError *)returnValue;
+    XCTAssertEqualObjects(error.code, @"INVALID_ACCESSIBLE");
+}
+
 // ---------------------------------------------------------------------------
 // Method channel – unimplemented method
 // ---------------------------------------------------------------------------

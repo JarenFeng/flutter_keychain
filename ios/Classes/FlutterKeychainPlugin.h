@@ -13,9 +13,12 @@ NS_ASSUME_NONNULL_BEGIN
  *                     Pass nil to use the default (app-specific) access group.
  * @param label        kSecAttrLabel string shown in iOS Passwords
  *                     (Settings > Passwords). Pass nil to omit the label.
+ * @param accessible   kSecAttrAccessible value as a stable string token
+ *                     (e.g. "afterFirstUnlock"). Pass nil for system default.
  */
 - (void)configureWithAccessGroup:(nullable NSString *)accessGroup
-                           label:(nullable NSString *)label;
+                           label:(nullable NSString *)label
+                      accessible:(nullable NSString *)accessible;
 
 @end
 

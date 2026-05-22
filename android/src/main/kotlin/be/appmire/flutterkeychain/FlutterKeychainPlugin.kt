@@ -387,7 +387,7 @@ class FlutterKeychainPlugin : FlutterPlugin, MethodCallHandler {
                         result.success(null)
                     }
                     "configure" -> {
-                        // Access groups and labels are iOS-only; no-op on Android.
+                        // accessGroup, label, and accessible are iOS-only; no-op on Android.
                         result.success(null)
                     }
                     else -> result.notImplemented()

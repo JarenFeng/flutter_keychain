@@ -30,6 +30,22 @@ await FlutterKeychain.clear();
 
 ```
 
+### iOS configuration (optional)
+
+Call `configure` before the first read/write when you need non-default Keychain behaviour.
+`accessGroup` and `label` are iOS-only. `accessible` maps to `kSecAttrAccessible` and is also iOS-only.
+
+```dart
+await FlutterKeychain.configure(
+  accessGroup: 'group.com.example.shared',
+  label: 'My App Credentials',
+  accessible: FlutterKeychainAccessible.afterFirstUnlock,
+);
+```
+
+On Android, `configure` is a no-op. Android does not expose a per-item equivalent of
+`kSecAttrAccessible`; stored values use the plugin's existing Keystore-backed encryption.
+
 ### Configure Android version
 In `[project]/android/app/build.gradle` set `minSdkVersion` to >= 18.
 ```
